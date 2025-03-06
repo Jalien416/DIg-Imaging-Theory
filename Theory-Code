@@ -1,0 +1,58 @@
+import cv2
+import numpy as np
+import time
+import socket
+
+# Configure the connection to the AI-deck (replace with actual IP if streaming)
+AIDECK_IP = "192.168.4.1"
+AIDECK_PORT = 5000  # Port for video streaming
+
+def capture_image():
+    """Captures an image from the AI-deck camera."""
+    cap = cv2.VideoCapture(f"http://{AIDECK_IP}:{AIDECK_PORT}/stream")
+
+    if not cap.isOpened():
+        print("Error: Could not open camera stream.")
+        return None
+
+    ret, frame = cap.read()
+    cap.release()
+
+    if ret:
+        return frame
+    else:
+        print("Error: Failed to capture image.")
+        return None
+
+def process_image(image):
+    """Applies digital imaging techniques (grayscale, edge detection)."""
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # Convert to grayscale
+    edges = cv2.Canny(gray, 50, 150)  # Apply Canny Edge Detection
+    return edges
+
+def save_image(image, filename="processed_image.jpg"):
+    """Saves the processed image to disk."""
+    cv2.imwrite(filename, image)
+    print(f"Image saved as {filename}")
+
+def send_image(image, server_ip="192.168.4.2", port=6000):
+    """Sends the processed image to a remote server."""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((server_ip, port))
+    
+    _, img_encoded = cv2.imencode('.jpg', image)
+    sock.sendall(img_encoded.tobytes())
+    sock.close()
+    print("Image sent to server.")
+
+def main():
+    """Main function to capture, process, and save/transmit images."""
+    image = capture_image()
+    
+    if image is not None:
+        processed_image = process_image(image)
+        save_image(processed_image)
+        send_image(processed_image)  # Optional: Send to a remote server
+
+if __name__ == "__main__":
+    main()
