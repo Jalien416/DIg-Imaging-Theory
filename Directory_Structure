@@ -7,3 +7,37 @@ crack-dataset/
 │   ├── train/
 │   ├── val/
 │   └── test/
+
+
+
+
+
+#if only having one folder of images (use following)
+
+
+import os, shutil, random
+from pathlib import Path
+
+data_dir = Path('Crack500/images')  # adjust if needed
+train_dir = Path('crack-dataset/images/train')
+val_dir = Path('crack-dataset/images/val')
+test_dir = Path('crack-dataset/images/test')
+
+train_dir.mkdir(parents=True, exist_ok=True)
+val_dir.mkdir(parents=True, exist_ok=True)
+test_dir.mkdir(parents=True, exist_ok=True)
+
+all_images = list(data_dir.glob('*.jpg'))
+random.shuffle(all_images)
+
+n_total = len(all_images)
+n_train = int(0.7 * n_total)
+n_val = int(0.2 * n_total)
+
+for i, img_path in enumerate(all_images):
+    if i < n_train:
+        shutil.copy(img_path, train_dir / img_path.name)
+    elif i < n_train + n_val:
+        shutil.copy(img_path, val_dir / img_path.name)
+    else:
+        shutil.copy(img_path, test_dir / img_path.name)
