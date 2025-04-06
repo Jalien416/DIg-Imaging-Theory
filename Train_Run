@@ -1,0 +1,46 @@
+#creating a crack.yaml file
+path: crack-dataset  # base path
+train: images/train
+val: images/val
+
+nc: 1  # number of classes
+names: ['crack']
+
+
+python train.py --img 640 --batch 16 --epochs 50 --data crack.yaml --weights yolov5s.pt --name crack-detector
+#this will train a YOLOv5 model using your dataset. The trained model will be saved under runs/train/crack-detector/weights/best.pt.
+#Once trained, you can run your model like this:
+
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='runs/train/crack-detector/weights/best.pt')
+
+image_folder = "test_images"
+for img_file in os.listdir(image_folder):
+    if img_file.endswith(('.jpg', '.png')):
+        results = model(os.path.join(image_folder, img_file))
+        results.save(save_dir='results')  # saves output images with detections
+
+#actual run code
+import torch
+from pathlib import Path
+import cv2
+from matplotlib import pyplot as plt
+
+# Load a pretrained model (for now, we'll use general YOLOv5s and pretend it's fine-tuned)
+model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+
+# For actual crack detection, replace with your own fine-tuned model
+# model = torch.hub.load('ultralytics/yolov5', 'custom', path='best.pt')
+
+# Predict on an image
+img_path = 'your_crack_image.jpg'  # Replace with your image
+results = model(img_path)
+
+# Show results
+results.print()
+results.show()
+
+# To access detected objects
+for *box, conf, cls in results.xyxy[0]:
+    print(f"Detected {model.names[int(cls)]} with confidence {conf:.2f}")
+
+
