@@ -1,0 +1,61 @@
+#Req. 
+pip install opencv-python numpy
+
+#Code
+import cv2
+import numpy as np
+import os
+
+def generate_fake_heatmap(image_path, output_path):
+    # Load image and get dimensions
+    img = cv2.imread(image_path)
+    h, w, _ = img.shape
+
+    # Start with black heatmap
+    heatmap = np.zeros((h, w), dtype=np.float32)
+
+    # Highlight corners
+    radius = int(min(h, w) * 0.05)
+    corners = [(0, 0), (0, w), (h, 0), (h, w)]
+    for y, x in corners:
+        cv2.circle(heatmap, (x, y), radius, 1.0, -1)
+
+    # Highlight horizontal and vertical edges
+    edge_thickness = int(h * 0.02)
+    cv2.rectangle(heatmap, (0, 0), (w, edge_thickness), 0.8, -1)  # top
+    cv2.rectangle(heatmap, (0, h - edge_thickness), (w, h), 0.8, -1)  # bottom
+    cv2.rectangle(heatmap, (0, 0), (edge_thickness, h), 0.8, -1)  # left
+    cv2.rectangle(heatmap, (w - edge_thickness, 0), (w, h), 0.8, -1)  # right
+
+    # Add some random stress spots
+    for _ in range(5):
+        cx, cy = np.random.randint(0, w), np.random.randint(0, h)
+        cv2.circle(heatmap, (cx, cy), radius // 2, np.random.uniform(0.5, 1.0), -1)
+
+    # Normalize and convert to image
+    heatmap = np.clip(heatmap, 0, 1)
+    heatmap_img = (heatmap * 255).astype(np.uint8)
+    heatmap_img = cv2.applyColorMap(heatmap_img, cv2.COLORMAP_JET)  # for visualizing
+
+    # Save grayscale version for model training
+    grayscale_out = (heatmap * 255).astype(np.uint8)
+    out_filename = os.path.splitext(os.path.basename(image_path))[0] + ".png"
+    cv2.imwrite(os.path.join(output_path, out_filename), grayscale_out)
+
+    # Optional: Show side-by-side
+    stacked = np.hstack((img, heatmap_img))
+    cv2.imshow("Image + Fake Heatmap", stacked)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
+# --- Run on a folder ---
+def process_folder(image_dir, output_dir):
+    os.makedirs(output_dir, exist_ok=True)
+    for filename in os.listdir(image_dir):
+        if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
+            generate_fake_heatmap(os.path.join(image_dir, filename), output_dir)
+
+# Example usage
+if __name__ == "__main__":
+    process_folder("images/", "heatmaps/")
